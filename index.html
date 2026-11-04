@@ -1,0 +1,756 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>*,*::before,*::after{box-sizing:border-box}body{margin:0}[hidden]{display:none!important}</style>
+<title>Archipel de la multimodalité</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout : la mer en 3D remplit l'écran ; en surimpression, cartouche en haut, panneau de phase à droite (en bas sur mobile), barre de navigation en bas. Univers unique « mer au crépuscule ». */
+:root {
+  color-scheme: dark;
+  --sea-deep: #0b2a36;
+  --sea: #13475a;
+  --ink: #eaf2f0;
+  --muted: #a3bfbf;
+  --line: rgba(207, 230, 230, 0.18);
+  --glass: rgba(8, 30, 39, 0.84);
+  --glass-strong: rgba(6, 24, 31, 0.92);
+  --foam: #cfe6e6;
+  --c-accroche: #f2c14e;
+  --c-apports: #5aa9e6;
+  --c-analyse: #6cc49a;
+  --c-pause: #b9b5a8;
+  --c-conception: #a58be0;
+  --c-restitution: #f09a5b;
+  --phase: var(--foam);
+  --f-display: "Bricolage Grotesque", "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  --f-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+html, body { height: 100%; }
+body {
+  background: var(--sea-deep);
+  color: var(--ink);
+  font-family: var(--f-body);
+  font-size: 15px;
+  line-height: 1.5;
+  overflow: hidden;
+}
+#app { position: fixed; inset: 0; }
+#scene { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+#labels { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+
+.isle-label {
+  position: absolute; left: 0; top: 0;
+  transform: translate(-50%, -100%);
+  display: flex; align-items: center; gap: 6px;
+  padding: 3px 9px 3px 4px;
+  border-radius: 999px;
+  background: rgba(6, 24, 31, 0.72);
+  border: 1px solid var(--line);
+  white-space: nowrap;
+  font-size: 12px;
+  opacity: 0.72;
+  transition: opacity .3s, border-color .3s;
+}
+.isle-label.on { opacity: 1; border-color: var(--lc); }
+.isle-label .num {
+  display: inline-grid; place-items: center;
+  width: 20px; height: 20px; border-radius: 50%;
+  background: var(--lc); color: #0b2a36;
+  font-family: var(--f-mono); font-weight: 500; font-size: 11px;
+}
+.isle-label .t { font-family: var(--f-mono); color: var(--muted); font-size: 11px; }
+
+.overlay {
+  position: absolute; inset: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 380px;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: 14px;
+  padding-top: calc(16px + env(safe-area-inset-top, 0px));
+  padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  pointer-events: none;
+}
+.overlay > * { pointer-events: auto; min-width: 0; }
+
+.masthead { grid-column: 1; grid-row: 1; justify-self: start; max-width: 520px; }
+.masthead .eyebrow {
+  font-family: var(--f-mono); font-size: 11px; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--muted); margin: 0 0 4px;
+}
+.masthead h1 {
+  font-family: var(--f-display); font-weight: 700; font-size: clamp(24px, 3.4vw, 38px);
+  line-height: 1.05; margin: 0; text-wrap: balance;
+  text-shadow: 0 2px 18px rgba(0,0,0,.35);
+}
+.masthead p { margin: 6px 0 0; color: var(--muted); font-size: 14px; }
+
+.panel {
+  grid-column: 2; grid-row: 1 / span 3;
+  align-self: start;
+  max-height: 100%;
+  overflow-y: auto;
+  background: var(--glass);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--line);
+  border-top: 4px solid var(--phase);
+  border-radius: 14px;
+  padding: 18px 20px 20px;
+  transition: border-color .4s;
+}
+.panel .eyebrow {
+  font-family: var(--f-mono); font-size: 12px; color: var(--muted); margin: 0;
+  display: flex; flex-wrap: wrap; gap: 4px 10px;
+}
+.panel .eyebrow b { color: var(--phase); font-weight: 500; }
+.panel h2 {
+  font-family: var(--f-display); font-weight: 700; font-size: 26px; line-height: 1.1;
+  margin: 6px 0 8px; text-wrap: balance;
+}
+.panel .intent { margin: 0 0 14px; color: var(--ink); }
+.panel h3 {
+  font-family: var(--f-mono); font-weight: 500; font-size: 11px; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--muted); margin: 16px 0 6px;
+}
+.panel ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
+.panel ol li::marker { color: var(--phase); font-family: var(--f-mono); }
+.roles { display: grid; gap: 10px; margin: 16px 0 0; }
+.roles div { border-left: 2px solid var(--phase); padding-left: 10px; }
+.roles dt {
+  font-family: var(--f-mono); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted);
+}
+.roles dd { margin: 2px 0 0; }
+.progress { height: 4px; border-radius: 2px; background: var(--line); overflow: hidden; margin-top: 4px; }
+.progress span { display: block; height: 100%; width: 0; background: var(--phase); }
+
+.ov-list { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 6px; }
+.ov-list button {
+  width: 100%; display: grid; grid-template-columns: 26px minmax(0,1fr) auto; align-items: center; gap: 10px;
+  text-align: left; font: inherit; color: var(--ink);
+  background: transparent; border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; cursor: pointer;
+}
+.ov-list button:hover { border-color: var(--c); background: rgba(255,255,255,.04); }
+.ov-list .dot {
+  width: 22px; height: 22px; border-radius: 50%; background: var(--c); color: #0b2a36;
+  display: grid; place-items: center; font-family: var(--f-mono); font-size: 11px; font-weight: 500;
+}
+.ov-list .name { font-weight: 700; }
+.ov-list .t { font-family: var(--f-mono); font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.hint { color: var(--muted); font-size: 13px; margin: 14px 0 0; }
+
+.dock {
+  grid-column: 1; grid-row: 3; align-self: end;
+  background: var(--glass-strong);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 10px 12px 12px;
+  display: grid; gap: 8px;
+  max-width: 820px; width: 100%; justify-self: center;
+}
+.dock-top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.btn {
+  display: inline-grid; place-items: center;
+  width: 38px; height: 38px; border-radius: 10px;
+  background: rgba(255,255,255,.06); color: var(--ink);
+  border: 1px solid var(--line); cursor: pointer;
+}
+.btn:hover { background: rgba(255,255,255,.12); }
+.btn.primary { width: 46px; height: 46px; border-radius: 50%; background: var(--phase); color: #0b2a36; border-color: transparent; }
+.btn svg { width: 18px; height: 18px; }
+.btn.primary svg { width: 20px; height: 20px; }
+.btn:focus-visible, .ov-list button:focus-visible, .track:focus-visible { outline: 2px solid var(--foam); outline-offset: 2px; }
+.now { margin-left: auto; text-align: right; min-width: 0; }
+.now .clock { font-family: var(--f-mono); font-size: 15px; font-variant-numeric: tabular-nums; }
+.now .clock span { color: var(--muted); }
+.now .lbl { font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.btn.text { width: auto; padding: 0 12px; font: inherit; font-size: 13px; }
+
+.track { position: relative; display: flex; gap: 3px; height: 14px; cursor: pointer; border-radius: 4px; }
+.track .seg { flex-grow: var(--d); flex-basis: 0; background: var(--c); opacity: .45; border-radius: 3px; transition: opacity .3s; }
+.track .seg.on { opacity: 1; }
+.track .cursor {
+  position: absolute; top: -4px; bottom: -4px; width: 3px; margin-left: -1.5px; left: 0;
+  background: var(--ink); border-radius: 2px; box-shadow: 0 0 0 2px var(--sea-deep);
+}
+.ticks { display: flex; justify-content: space-between; font-family: var(--f-mono); font-size: 10px; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+@media (max-width: 860px) {
+  .overlay {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr) auto auto;
+    gap: 10px;
+  }
+  .panel { grid-column: 1; grid-row: 4; max-height: 38vh; padding: 14px 16px 16px; }
+  .panel h2 { font-size: 21px; }
+  .dock { grid-row: 3; }
+  .masthead p { display: none; }
+  .now .lbl { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .isle-label, .panel, .track .seg { transition: none; }
+}
+</style>
+
+</head>
+<body>
+<div id="app">
+  <canvas id="scene" aria-label="Archipel en 3D : chaque île représente une phase du cours, un bateau avance de l'une à l'autre au fil des 120 minutes"></canvas>
+  <div id="labels" aria-hidden="true"></div>
+
+  <div class="overlay">
+    <header class="masthead">
+      <p class="eyebrow">Scénario de cours · Ingénierie pédagogique multimodale</p>
+      <h1>L'archipel de la multimodalité</h1>
+      <p>Une séance de 2 heures en cinq escales et une pause. Le bateau avance au rythme du cours.</p>
+    </header>
+
+    <aside class="panel" id="panel" aria-live="polite"></aside>
+
+    <nav class="dock" aria-label="Contrôles de l'animation">
+      <div class="dock-top">
+        <button class="btn" id="prev" type="button" aria-label="Phase précédente">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 5v14"/><path d="M19 5 9 12l10 7z"/></svg>
+        </button>
+        <button class="btn primary" id="play" type="button" aria-label="Lecture">
+          <svg id="ico-play" viewBox="0 0 24 24" fill="currentColor"><path d="M7 4.5v15l13-7.5z"/></svg>
+          <svg id="ico-pause" viewBox="0 0 24 24" fill="currentColor" hidden><rect x="6" y="4.5" width="4" height="15" rx="1"/><rect x="14" y="4.5" width="4" height="15" rx="1"/></svg>
+        </button>
+        <button class="btn" id="next" type="button" aria-label="Phase suivante">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 5v14"/><path d="M5 5l10 7-10 7z"/></svg>
+        </button>
+        <button class="btn text" id="overview" type="button">Vue d'ensemble</button>
+        <div class="now">
+          <div class="clock" id="clock">0:00 <span>/ 2:00</span></div>
+          <div class="lbl" id="nowlbl">Avant le cours</div>
+        </div>
+      </div>
+      <div class="track" id="track" role="slider" tabindex="0" aria-label="Position dans le cours, en minutes" aria-valuemin="0" aria-valuemax="120" aria-valuenow="0"></div>
+      <div class="ticks"><span>0:00</span><span>0:30</span><span>1:00</span><span>1:30</span><span>2:00</span></div>
+    </nav>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(() => {
+const PHASES = [
+  { key: 'accroche', n: 1, name: 'Accroche', start: 0, end: 10, color: 0xf2c14e, css: 'var(--c-accroche)', prop: 'phare',
+    intent: "Faire émerger la question de la multimodalité à partir de l'expérience des étudiants.",
+    activites: ["Comparer deux supports : un texte seul, puis le même contenu avec un schéma", "Recueillir les représentations de la promo (nuage de mots)", "Présenter les objectifs et le déroulé de la séance"],
+    production: "Nuage de mots des représentations de la promo",
+    enseignant: "Déclenche la réflexion et recueille les idées sans les valider.",
+    etudiants: "Comparent les deux supports et expriment leurs représentations." },
+  { key: 'apports', n: 2, name: 'Apports conceptuels', start: 10, end: 35, color: 0x5aa9e6, css: 'var(--c-apports)', prop: 'livres',
+    intent: "Poser les notions et les cadres théoriques qui serviront dans les ateliers.",
+    activites: ["Distinguer mode, média et modalité", "Théorie cognitive de l'apprentissage multimédia (Mayer)", "Théorie de la charge cognitive (Sweller)", "Principes de conception : cohérence, contiguïté, redondance, modalité"],
+    production: "Carte conceptuelle de prise de notes",
+    enseignant: "Expose et illustre chaque principe par un exemple et un contre-exemple.",
+    etudiants: "Prennent des notes et relient les notions aux supports de l'accroche." },
+  { key: 'analyse', n: 3, name: "Atelier d'analyse", start: 35, end: 60, color: 0x6cc49a, css: 'var(--c-analyse)', prop: 'cases',
+    intent: "Appliquer les principes à une ressource existante pour en juger la conception.",
+    activites: ["Former des groupes de 3 à 4 étudiants", "Analyser une ressource pédagogique avec la grille", "Mettre en commun les constats des groupes"],
+    production: "Grille d'analyse complétée par chaque groupe",
+    enseignant: "Circule entre les groupes, relance et régule la mise en commun.",
+    etudiants: "Appliquent les principes et argumentent leurs constats." },
+  { key: 'pause', n: null, name: 'Pause', start: 60, end: 70, color: 0xb9b5a8, css: 'var(--c-pause)', prop: 'palmier',
+    intent: "Dix minutes pour souffler avant l'atelier de conception.",
+    activites: ["Temps libre"],
+    production: "Aucune",
+    enseignant: "Reste disponible pour les questions individuelles.",
+    etudiants: "Font une pause." },
+  { key: 'conception', n: 4, name: 'Atelier de conception', start: 70, end: 105, color: 0xa58be0, css: 'var(--c-conception)', prop: 'storyboard',
+    intent: "Concevoir une courte séquence multimodale et justifier le choix des modes.",
+    activites: ["Fixer l'objectif d'apprentissage et le public", "Choisir les modes et vérifier qu'ils conviennent, sinon revenir à l'objectif", "Scénariser la séquence", "Réaliser le storyboard"],
+    production: "Storyboard multimodal",
+    enseignant: "Accompagne les groupes et questionne leurs choix de modes.",
+    etudiants: "Conçoivent la séquence et justifient leurs choix à l'aide des principes." },
+  { key: 'restitution', n: 5, name: 'Restitution et synthèse', start: 105, end: 120, color: 0xf09a5b, css: 'var(--c-restitution)', prop: 'amphi',
+    intent: "Partager les productions et consolider les acquis de la séance.",
+    activites: ["Pitch de chaque groupe en 2 minutes", "Rétroaction des pairs", "Synthèse de l'enseignant et quiz de fin de séance"],
+    production: "Retours des pairs et résultats du quiz",
+    enseignant: "Synthétise et fait le lien avec la séance suivante.",
+    etudiants: "Présentent leur storyboard et évaluent celui des autres." }
+];
+const TOTAL = 120;
+const RATE = TOTAL / 90; // minutes de cours par seconde : 2 h en 90 s
+const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+const fmt = m => { const h = Math.floor(m / 60), mm = Math.floor(m % 60); return h + ':' + String(mm).padStart(2, '0'); };
+
+// ---------- Scène ----------
+const canvas = document.getElementById('scene');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+const scene = new THREE.Scene();
+const SEA_DEEP = new THREE.Color(0x0b2a36);
+scene.background = SEA_DEEP.clone();
+scene.fog = new THREE.Fog(0x0b2a36, 80, 260);
+const camera = new THREE.PerspectiveCamera(45, 1, 0.5, 900);
+
+scene.add(new THREE.HemisphereLight(0xd8ecff, 0x0b2a36, 0.85));
+const sun = new THREE.DirectionalLight(0xffe2b8, 0.95);
+sun.position.set(40, 70, 30);
+scene.add(sun);
+
+// Mer
+const seaGeo = new THREE.PlaneGeometry(520, 520, 90, 90);
+seaGeo.rotateX(-Math.PI / 2);
+const seaBase = seaGeo.attributes.position.array.slice();
+const sea = new THREE.Mesh(seaGeo, new THREE.MeshStandardMaterial({ color: 0x13475a, roughness: 0.75, metalness: 0.05, flatShading: true }));
+sea.position.set(8, 0, 0);
+scene.add(sea);
+function waves(t) {
+  const p = seaGeo.attributes.position.array;
+  for (let i = 0; i < p.length; i += 3) {
+    const x = seaBase[i], z = seaBase[i + 2];
+    p[i + 1] = Math.sin(x * 0.07 + t * 0.9) * 0.35 + Math.cos(z * 0.09 + t * 0.7) * 0.3;
+  }
+  seaGeo.attributes.position.needsUpdate = true;
+  seaGeo.computeVertexNormals();
+}
+waves(0);
+
+const mat = (c, extra = {}) => new THREE.MeshStandardMaterial(Object.assign({ color: c, roughness: 0.85, flatShading: true }, extra));
+const SAND = 0xd9c9a3;
+
+// Îles
+const XS = [-72, -40, -4, 24, 54, 88];
+const ZS = [6, -12, 12, -14, 10, -8];
+const islands = [];
+const routePts = [new THREE.Vector3(-98, 0, 0)];
+const knots = [0];
+
+function addProp(g, kind, r, c) {
+  const top = 2.6;
+  const col = new THREE.Color(c);
+  if (kind === 'phare') {
+    const tower = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 1.0, 6, 8), mat(0xf4f1ea));
+    tower.position.set(r * 0.15, top + 3, -r * 0.1);
+    const band = new THREE.Mesh(new THREE.CylinderGeometry(0.82, 0.88, 1.1, 8), mat(0xd9534f));
+    band.position.set(r * 0.15, top + 3.6, -r * 0.1);
+    const lamp = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.6, 1.0, 8), mat(0xfff2c0, { emissive: 0xffd36b, emissiveIntensity: 1 }));
+    lamp.position.set(r * 0.15, top + 6.5, -r * 0.1);
+    const roof = new THREE.Mesh(new THREE.ConeGeometry(0.9, 1.2, 8), mat(0x37474f));
+    roof.position.set(r * 0.15, top + 7.6, -r * 0.1);
+    g.add(tower, band, lamp, roof);
+    g.userData.lamp = lamp;
+  } else if (kind === 'livres') {
+    const cols = [0x5aa9e6, 0xf4f1ea, 0x2f6f9f, 0xe8b04b, 0x8cc7f0];
+    for (let i = 0; i < 5; i++) {
+      const b = new THREE.Mesh(new THREE.BoxGeometry(4.2 - i * 0.35, 0.9, 3 - i * 0.2), mat(cols[i]));
+      b.position.set(0, top + 0.9 + i * 0.92, 0);
+      b.rotation.y = (i % 2 ? 1 : -1) * 0.18 * i;
+      g.add(b);
+    }
+  } else if (kind === 'cases') {
+    for (let i = 0; i < 4; i++) {
+      const a = (i / 4) * Math.PI * 2 + 0.4;
+      const hut = new THREE.Group();
+      const wall = new THREE.Mesh(new THREE.BoxGeometry(2, 1.6, 2), mat(0xf1e6cf));
+      wall.position.y = 0.8;
+      const roofM = new THREE.Mesh(new THREE.ConeGeometry(1.75, 1.6, 4), mat(col.clone().multiplyScalar(0.7)));
+      roofM.position.y = 2.4; roofM.rotation.y = Math.PI / 4;
+      hut.add(wall, roofM);
+      hut.position.set(Math.cos(a) * r * 0.42, top + 0.2, Math.sin(a) * r * 0.42);
+      hut.rotation.y = -a;
+      g.add(hut);
+    }
+    const fire = new THREE.Mesh(new THREE.ConeGeometry(0.6, 1.2, 5), mat(0xffb347, { emissive: 0xff7a1a, emissiveIntensity: 0.8 }));
+    fire.position.set(0, top + 0.8, 0);
+    g.add(fire);
+  } else if (kind === 'palmier') {
+    let y = top + 0.2, x = 0;
+    for (let i = 0; i < 6; i++) {
+      const s = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.4, 1.1, 6), mat(0x8a6a44));
+      x += 0.18; s.position.set(x, y + 0.5, 0); s.rotation.z = -0.15;
+      g.add(s); y += 1.05;
+    }
+    for (let i = 0; i < 6; i++) {
+      const leaf = new THREE.Mesh(new THREE.ConeGeometry(0.5, 3.2, 4), mat(0x4f9a5b));
+      const a = (i / 6) * Math.PI * 2;
+      leaf.position.set(x + Math.cos(a) * 1.3, y + 0.2, Math.sin(a) * 1.3);
+      leaf.rotation.z = Math.cos(a) * -1.3 - 0.3 * Math.cos(a);
+      leaf.rotation.x = Math.sin(a) * 1.3;
+      g.add(leaf);
+    }
+  } else if (kind === 'storyboard') {
+    const easelCol = 0x6b4f3a;
+    for (let i = 0; i < 3; i++) {
+      const frame = new THREE.Group();
+      const board = new THREE.Mesh(new THREE.BoxGeometry(3, 2.2, 0.25), mat(0xf4f1ea));
+      board.position.y = 2.6;
+      const pic = new THREE.Mesh(new THREE.BoxGeometry(2.4, 1.2, 0.1), mat([0xa58be0, 0x5aa9e6, 0xf09a5b][i]));
+      pic.position.set(0, 2.85, 0.15);
+      const leg1 = new THREE.Mesh(new THREE.BoxGeometry(0.2, 2.6, 0.2), mat(easelCol));
+      leg1.position.set(-1.1, 1.3, 0);
+      const leg2 = leg1.clone(); leg2.position.x = 1.1;
+      frame.add(board, pic, leg1, leg2);
+      frame.position.set((i - 1) * 3.6, top, (i === 1 ? -1.2 : 0));
+      frame.rotation.y = (1 - i) * 0.25;
+      g.add(frame);
+    }
+    const crate = new THREE.Mesh(new THREE.BoxGeometry(1.6, 1.6, 1.6), mat(0xc9a36b));
+    crate.position.set(r * 0.45, top + 0.8, r * 0.35);
+    g.add(crate);
+  } else if (kind === 'amphi') {
+    for (let i = 0; i < 3; i++) {
+      const tier = new THREE.Mesh(new THREE.TorusGeometry(2.2 + i * 1.3, 0.45, 6, 24, Math.PI * 1.1), mat(i % 2 ? 0xe9dcc0 : 0xd8c39a));
+      tier.rotation.x = -Math.PI / 2;
+      tier.rotation.z = Math.PI * 0.95;
+      tier.position.set(0, top + 0.3 + i * 0.55, 0);
+      g.add(tier);
+    }
+    const podium = new THREE.Mesh(new THREE.CylinderGeometry(1.1, 1.3, 0.8, 8), mat(c));
+    podium.position.set(0, top + 0.4, 0);
+    g.add(podium);
+  }
+}
+
+PHASES.forEach((ph, i) => {
+  const dur = ph.end - ph.start;
+  const r = 5 + dur * 0.22;
+  const g = new THREE.Group();
+  const col = new THREE.Color(ph.color);
+  const beach = new THREE.Mesh(new THREE.CylinderGeometry(r, r * 1.18, 1.6, 10), mat(SAND));
+  beach.position.y = 0.3;
+  const grass = new THREE.Mesh(new THREE.CylinderGeometry(r * 0.8, r * 0.94, 1.4, 10), mat(col.clone().lerp(new THREE.Color(0x3f7d4f), 0.35)));
+  grass.position.y = 1.6;
+  g.add(beach, grass);
+  // collines
+  for (let k = 0; k < 2; k++) {
+    const h = new THREE.Mesh(new THREE.ConeGeometry(r * 0.28, r * 0.35, 6), mat(col.clone().lerp(new THREE.Color(0x2e5d3c), 0.5)));
+    const a = k * 2.4 + i;
+    h.position.set(Math.cos(a) * r * 0.55, 2.3 + r * 0.15, Math.sin(a) * r * 0.55);
+    g.add(h);
+  }
+  addProp(g, ph.prop, r, ph.color);
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(r * 1.25 + 1, 0.22, 8, 64),
+    new THREE.MeshBasicMaterial({ color: ph.color, transparent: true, opacity: 0 }));
+  ring.rotation.x = -Math.PI / 2;
+  ring.position.y = 0.45;
+  g.add(ring);
+
+  const x = XS[i], z = ZS[i];
+  g.position.set(x, 0, z);
+  g.rotation.y = 0;
+  scene.add(g);
+  g.traverse(o => { if (o.isMesh) o.userData.phase = i; });
+
+  const side = z > 0 ? -1 : 1;
+  routePts.push(new THREE.Vector3(x, 0, z + side * (r * 1.25 + 4)));
+  knots.push((ph.start + ph.end) / 2);
+
+  const lab = document.createElement('div');
+  lab.className = 'isle-label';
+  lab.style.setProperty('--lc', ph.css);
+  lab.innerHTML = (ph.n ? `<span class="num">${ph.n}</span>` : `<span class="num">‖</span>`) +
+    `<span>${ph.name}</span><span class="t">${fmt(ph.start)}–${fmt(ph.end)}</span>`;
+  document.getElementById('labels').appendChild(lab);
+
+  islands.push({ g, ring, r, lab, base: g.position.clone() });
+});
+routePts.push(new THREE.Vector3(112, 0, 0));
+knots.push(TOTAL);
+
+const curve = new THREE.CatmullRomCurve3(routePts, false, 'centripetal');
+const lineGeo = new THREE.BufferGeometry().setFromPoints(curve.getPoints(400).map(p => new THREE.Vector3(p.x, 0.7, p.z)));
+const route = new THREE.Line(lineGeo, new THREE.LineDashedMaterial({ color: 0xcfe6e6, dashSize: 1.4, gapSize: 1.6, transparent: true, opacity: 0.55 }));
+route.computeLineDistances();
+scene.add(route);
+
+// Bateau
+const boat = new THREE.Group();
+const hullShape = new THREE.Mesh(new THREE.BoxGeometry(4.4, 1, 1.8), mat(0x7a4b2a));
+hullShape.position.y = 0.4;
+const bow = new THREE.Mesh(new THREE.ConeGeometry(0.9, 1.6, 4), mat(0x7a4b2a));
+bow.rotation.z = -Math.PI / 2; bow.rotation.x = Math.PI / 4; bow.position.set(2.9, 0.4, 0);
+const mast = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.12, 5, 6), mat(0x5b3a22));
+mast.position.set(0.2, 3, 0);
+const sail = new THREE.Mesh(new THREE.ConeGeometry(1.6, 4.2, 3), mat(0xf7f3ea, { side: THREE.DoubleSide }));
+sail.scale.set(1, 1, 0.12); sail.position.set(-0.6, 3.1, 0);
+const flag = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.5, 0.05), mat(0xf2c14e));
+flag.position.set(0.65, 5.4, 0);
+boat.add(hullShape, bow, mast, sail, flag);
+scene.add(boat);
+
+function minuteToU(m) {
+  m = Math.max(0, Math.min(TOTAL, m));
+  for (let k = 0; k < knots.length - 1; k++) {
+    if (m <= knots[k + 1]) {
+      const f = (m - knots[k]) / (knots[k + 1] - knots[k] || 1);
+      return (k + f) / (knots.length - 1);
+    }
+  }
+  return 1;
+}
+
+// ---------- État ----------
+const state = { t: 0, playing: false, mode: 'overview', panel: null };
+
+function phaseAt(t) {
+  if (t >= TOTAL) return PHASES.length - 1;
+  return PHASES.findIndex(p => t >= p.start && t < p.end);
+}
+
+// ---------- Interface ----------
+const panel = document.getElementById('panel');
+const clock = document.getElementById('clock');
+const nowlbl = document.getElementById('nowlbl');
+const track = document.getElementById('track');
+const playBtn = document.getElementById('play');
+const icoPlay = document.getElementById('ico-play');
+const icoPause = document.getElementById('ico-pause');
+
+PHASES.forEach((ph, i) => {
+  const s = document.createElement('div');
+  s.className = 'seg';
+  s.style.setProperty('--d', ph.end - ph.start);
+  s.style.setProperty('--c', ph.css);
+  s.title = `${ph.name} · ${fmt(ph.start)}–${fmt(ph.end)}`;
+  track.appendChild(s);
+});
+const cursor = document.createElement('div');
+cursor.className = 'cursor';
+track.appendChild(cursor);
+const segs = [...track.querySelectorAll('.seg')];
+
+function renderOverview() {
+  document.documentElement.style.setProperty('--phase', 'var(--foam)');
+  const ended = state.t >= TOTAL;
+  panel.innerHTML = `
+    <p class="eyebrow"><span>Vue d'ensemble</span><span>120 min</span><span>Master</span></p>
+    <h2>${ended ? 'Fin de la séance' : 'Cinq escales en deux heures'}</h2>
+    <p class="intent">La séance alterne apports, ateliers en groupe et restitution. Chaque île correspond à une phase, et sa taille à sa durée.</p>
+    <ul class="ov-list">
+      ${PHASES.map((p, i) => `<li><button type="button" data-go="${i}" style="--c:${p.css}">
+        <span class="dot">${p.n ?? '‖'}</span>
+        <span class="name">${p.name}</span>
+        <span class="t">${fmt(p.start)}–${fmt(p.end)} · ${p.end - p.start} min</span>
+      </button></li>`).join('')}
+    </ul>
+    <p class="hint">${ended ? 'Lancez la lecture pour rejouer la séance, ou choisissez une phase.' : 'Lancez la lecture, ou choisissez une phase pour y aller directement. Raccourcis : espace, flèches ←&nbsp;→.'}</p>`;
+  panel.querySelectorAll('[data-go]').forEach(b => b.addEventListener('click', () => goPhase(+b.dataset.go)));
+}
+
+function renderPhase(i) {
+  const p = PHASES[i];
+  document.documentElement.style.setProperty('--phase', p.css);
+  const label = p.n ? `Phase ${p.n} sur 5` : 'Pause';
+  panel.innerHTML = `
+    <p class="eyebrow"><b>${label}</b><span>${fmt(p.start)} → ${fmt(p.end)}</span><span>${p.end - p.start} min</span></p>
+    <div class="progress"><span id="pprog"></span></div>
+    <h2>${p.name}</h2>
+    <p class="intent">${p.intent}</p>
+    <h3>Activités</h3>
+    <ol>${p.activites.map(a => `<li>${a}</li>`).join('')}</ol>
+    <dl class="roles">
+      <div><dt>Production</dt><dd>${p.production}</dd></div>
+      <div><dt>Enseignant</dt><dd>${p.enseignant}</dd></div>
+      <div><dt>Étudiants</dt><dd>${p.etudiants}</dd></div>
+    </dl>`;
+}
+
+function syncPanel() {
+  const showOverview = state.mode === 'overview' && !state.playing;
+  const key = showOverview ? 'ov' + (state.t >= TOTAL ? 'end' : '') : 'p' + phaseAt(state.t);
+  if (key !== state.panel) {
+    state.panel = key;
+    if (showOverview) renderOverview(); else renderPhase(phaseAt(state.t));
+  }
+  const i = phaseAt(state.t);
+  const p = PHASES[i];
+  const pp = document.getElementById('pprog');
+  if (pp) pp.style.width = Math.min(100, ((state.t - p.start) / (p.end - p.start)) * 100) + '%';
+  clock.innerHTML = `${fmt(state.t)} <span>/ 2:00</span>`;
+  nowlbl.textContent = state.t <= 0 && !state.playing ? 'Avant le cours' : (state.t >= TOTAL ? 'Fin de la séance' : p.name);
+  cursor.style.left = (state.t / TOTAL * 100) + '%';
+  track.setAttribute('aria-valuenow', Math.round(state.t));
+  track.setAttribute('aria-valuetext', `${fmt(state.t)}, ${p.name}`);
+  segs.forEach((s, k) => s.classList.toggle('on', k === i && !(state.mode === 'overview' && !state.playing)));
+  islands.forEach((isl, k) => isl.lab.classList.toggle('on', k === i));
+}
+
+function setPlaying(v) {
+  state.playing = v;
+  icoPlay.hidden = v; icoPause.hidden = !v;
+  playBtn.setAttribute('aria-label', v ? 'Pause' : 'Lecture');
+  if (v) state.mode = 'follow';
+  syncPanel();
+}
+
+function goPhase(i) {
+  state.t = PHASES[i].start + 0.01;
+  state.mode = 'follow';
+  state.panel = null;
+  syncPanel();
+}
+
+playBtn.addEventListener('click', () => {
+  if (!state.playing && state.t >= TOTAL) state.t = 0;
+  setPlaying(!state.playing);
+});
+document.getElementById('next').addEventListener('click', () => {
+  const i = phaseAt(state.t);
+  if (state.mode === 'overview' && state.t <= 0) return goPhase(0);
+  if (i < PHASES.length - 1) goPhase(i + 1);
+});
+document.getElementById('prev').addEventListener('click', () => {
+  const i = phaseAt(state.t);
+  if (state.t - PHASES[i].start > 2) goPhase(i); else if (i > 0) goPhase(i - 1); else goPhase(0);
+});
+document.getElementById('overview').addEventListener('click', () => {
+  setPlaying(false);
+  state.mode = 'overview';
+  syncPanel();
+});
+function seekFromX(clientX) {
+  const r = track.getBoundingClientRect();
+  state.t = Math.max(0, Math.min(TOTAL - 0.01, (clientX - r.left) / r.width * TOTAL));
+  state.mode = 'follow';
+  syncPanel();
+}
+let dragging = false;
+track.addEventListener('pointerdown', e => { dragging = true; track.setPointerCapture(e.pointerId); seekFromX(e.clientX); });
+track.addEventListener('pointermove', e => { if (dragging) seekFromX(e.clientX); });
+track.addEventListener('pointerup', () => { dragging = false; });
+track.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+    e.preventDefault(); e.stopPropagation();
+    state.t = Math.max(0, Math.min(TOTAL - 0.01, state.t + (e.key === 'ArrowRight' ? 1 : -1)));
+    state.mode = 'follow'; syncPanel();
+  }
+});
+window.addEventListener('keydown', e => {
+  if (e.target.closest && e.target.closest('input, textarea')) return;
+  if (e.code === 'Space' && !(e.target instanceof HTMLButtonElement)) { e.preventDefault(); playBtn.click(); }
+  else if (e.key === 'ArrowRight' && e.target !== track) document.getElementById('next').click();
+  else if (e.key === 'ArrowLeft' && e.target !== track) document.getElementById('prev').click();
+});
+
+// Clic sur une île
+const ray = new THREE.Raycaster();
+const ndc = new THREE.Vector2();
+const pickables = [];
+islands.forEach(isl => isl.g.traverse(o => { if (o.isMesh && o.material.opacity !== 0) pickables.push(o); }));
+function pick(e) {
+  const r = canvas.getBoundingClientRect();
+  ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
+  ray.setFromCamera(ndc, camera);
+  const hit = ray.intersectObjects(pickables, false)[0];
+  return hit ? hit.object.userData.phase : -1;
+}
+canvas.addEventListener('pointermove', e => { canvas.style.cursor = pick(e) >= 0 ? 'pointer' : 'default'; });
+canvas.addEventListener('click', e => { const i = pick(e); if (i >= 0) goPhase(i); });
+
+// ---------- Caméra ----------
+const camTarget = new THREE.Vector3(8, 0, 0);
+const camPos = new THREE.Vector3(8, 140, 150);
+const upVec = new THREE.Vector3(0, 1, 0);
+const tmpPos = new THREE.Vector3(), tmpLook = new THREE.Vector3(), tmpUp = new THREE.Vector3();
+function desiredCamera(out, look, up) {
+  const aspect = camera.aspect;
+  if (state.mode === 'overview') {
+    if (aspect < 1) {
+      look.set(8, 0, 0);
+      out.set(8 - 20, 260, 0);
+      up.set(1, 0, 0);
+    } else {
+      const k = Math.max(1, 1.75 / aspect);
+      look.set(8, 0, 0);
+      out.set(8, 115 * k, 120 * k);
+      up.set(0, 1, 0);
+    }
+  } else {
+    const bp = boat.position;
+    const k = aspect < 1 ? 1.5 : 1;
+    look.set(bp.x + 6, 0, bp.z * 0.6);
+    out.set(bp.x - 6, 26 * k, bp.z * 0.6 + 40 * k);
+    up.set(0, 1, 0);
+  }
+}
+
+function resize() {
+  const w = window.innerWidth, h = window.innerHeight;
+  renderer.setSize(w, h, false);
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+}
+window.addEventListener('resize', resize);
+resize();
+desiredCamera(camPos, camTarget, upVec);
+
+// ---------- Boucle ----------
+const clockT = new THREE.Clock();
+let elapsed = 0;
+const proj = new THREE.Vector3();
+function frame() {
+  const dt = Math.min(clockT.getDelta(), 0.1);
+  elapsed += dt;
+  if (state.playing) {
+    state.t += dt * RATE;
+    if (state.t >= TOTAL) { state.t = TOTAL; setPlaying(false); state.mode = 'overview'; }
+    syncPanel();
+  }
+  if (!reduced) waves(elapsed);
+
+  // bateau
+  const u = minuteToU(state.t);
+  const p = curve.getPoint(u);
+  const tan = curve.getTangent(Math.min(0.999, Math.max(0.001, u)));
+  boat.position.set(p.x, 0.35 + (reduced ? 0 : Math.sin(elapsed * 2) * 0.15), p.z);
+  boat.rotation.y = Math.atan2(-tan.z, tan.x);
+  boat.rotation.x = reduced ? 0 : Math.sin(elapsed * 1.6) * 0.05;
+
+  // îles
+  const active = phaseAt(state.t);
+  const showActive = !(state.mode === 'overview' && !state.playing && state.t <= 0);
+  islands.forEach((isl, k) => {
+    const on = showActive && k === active;
+    const target = on ? 0.35 + (reduced ? 0.3 : Math.sin(elapsed * 3) * 0.25 + 0.25) : 0;
+    isl.ring.material.opacity += (target - isl.ring.material.opacity) * 0.12;
+    const s = on ? 1.06 : 1;
+    isl.g.scale.lerp(new THREE.Vector3(s, s, s), 0.08);
+    if (isl.g.userData.lamp) isl.g.userData.lamp.material.emissiveIntensity = 0.6 + (reduced ? 0.4 : (Math.sin(elapsed * 4) * 0.5 + 0.5));
+  });
+
+  // caméra
+  desiredCamera(tmpPos, tmpLook, tmpUp);
+  const a = reduced ? 1 : 1 - Math.pow(0.04, dt);
+  camPos.lerp(tmpPos, a);
+  camTarget.lerp(tmpLook, a);
+  upVec.lerp(tmpUp, a).normalize();
+  camera.position.copy(camPos);
+  camera.up.copy(upVec);
+  camera.lookAt(camTarget);
+  const far = state.mode === 'overview' ? 420 : 240;
+  scene.fog.far += (far - scene.fog.far) * a;
+
+  renderer.render(scene, camera);
+
+  // étiquettes
+  const w = window.innerWidth, h = window.innerHeight;
+  islands.forEach(isl => {
+    proj.set(isl.base.x, isl.r * 0.6 + 9, isl.base.z).project(camera);
+    const vis = proj.z < 1 && Math.abs(proj.x) < 1.1 && Math.abs(proj.y) < 1.1;
+    isl.lab.style.display = vis ? '' : 'none';
+    if (vis) isl.lab.style.transform = `translate(${(proj.x * 0.5 + 0.5) * w}px, ${(-proj.y * 0.5 + 0.5) * h}px) translate(-50%, -100%)`;
+  });
+
+  requestAnimationFrame(frame);
+}
+syncPanel();
+requestAnimationFrame(frame);
+if (!reduced) setTimeout(() => { if (state.t <= 0 && !state.playing && state.mode === 'overview') setPlaying(true); }, 2200);
+})();
+</script>
+
+</body>
+</html>
