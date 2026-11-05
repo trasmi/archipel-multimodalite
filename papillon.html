@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Le cycle du papillon</title>
+<meta name="description" content="Animation en cut-paper collage du cycle de vie du monarque, en boucle.">
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    padding: 1.5rem;
+    background: #12161c;
+    color: #eaf2f0;
+    font-family: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+    text-align: center;
+  }
+  h1 { font-size: 1.1rem; font-weight: 700; margin: 0; opacity: 0.9; }
+  video {
+    width: 100%;
+    max-width: 960px;
+    border-radius: 10px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+    background: #efe4cc;
+  }
+  p.credit { font-size: 0.85rem; opacity: 0.6; margin: 0; }
+</style>
+</head>
+<body>
+  <h1>Le cycle du papillon — cut-paper collage</h1>
+  <video controls autoplay loop muted playsinline poster="assets/videos/cycle-papillon-poster.jpg">
+    <source src="assets/videos/cycle-papillon.mp4" type="video/mp4">
+    <source src="assets/videos/cycle-papillon.webm" type="video/webm">
+    Votre navigateur ne peut pas lire cette vidéo.
+    <a href="assets/videos/cycle-papillon.mp4">Télécharger le fichier MP4</a>.
+  </video>
+  <p class="credit">Œuf · chenille · chrysalide · monarque — boucle de 24 s, 16:9, sans son.</p>
+</body>
+</html>
